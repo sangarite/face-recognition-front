@@ -116,7 +116,6 @@ class App extends Component {
     const { isSignedIn, imageUrl, route, box } = this.state;
     return (
        <div className="App">
-         <h1>test</h1>
          <Particles className='particles'
           params={particlesOptions}
           />
