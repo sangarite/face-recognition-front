@@ -7,6 +7,7 @@ import Register from './components/Register/Register';
 import Logo from './components/Logo/Logo';
 import ImageLinkForm from './components/ImageLinkForm/ImageLinkForm';
 import Rank from './components/Rank/Rank';
+import Loading from './components/Loading/loading';
 import './App.css';
 
 const particlesOptions = {
@@ -27,6 +28,7 @@ const initialState = {
   box: {},
   route: 'signin',
   isSignedIn: false,
+  isLoading: false,
   user: {
     id: '',
     name: '',
@@ -74,33 +76,37 @@ class App extends Component {
   }
 
   onButtonSubmit = () => {
-    this.setState({imageUrl: this.state.input});
-      fetch('https://fast-fortress-39267.herokuapp.com/imageurl', {
-        method: 'post',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-          input: this.state.input
-        })
+    this.setState({imageUrl: this.state.input, isLoading: true});
+    fetch('https://fast-fortress-39267.herokuapp.com/imageurl', {
+      method: 'post',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        input: this.state.input
       })
-      .then(response => response.json())
-      .then(response => {
-        if (response) {
-          fetch('https://fast-fortress-39267.herokuapp.com/image', {
-            method: 'put',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-              id: this.state.user.id
-            })
+    })
+    .then(response => response.json())
+    .then(response => {
+      if (response) {
+        fetch('https://fast-fortress-39267.herokuapp.com/image', {
+          method: 'put',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            id: this.state.user.id
           })
-            .then(response => response.json())
-            .then(count => {
-              this.setState(Object.assign(this.state.user, { entries: count}))
-            })
-            .catch(console.log)
-        }
-        this.displayFaceBox(this.calculateFaceLocation(response))
-      })
-      .catch(err => console.log(err));
+        })
+          .then(response => response.json())
+          .then(count => {
+            this.setState(Object.assign(this.state.user, { entries: count}))
+          })
+          .catch(console.log)
+      }
+      this.displayFaceBox(this.calculateFaceLocation(response))
+      this.setState({isLoading: false});
+    })
+    .catch(err => {
+      console.log(err)
+      this.setState({isLoading: false});
+    });
   }
 
   onRouteChange = (route) => {
@@ -113,30 +119,31 @@ class App extends Component {
   }
 
   render() {
-    const { isSignedIn, imageUrl, route, box } = this.state;
+    const { isSignedIn, imageUrl, route, box, isLoading } = this.state;
     return (
-       <div className="App">
-         <Particles className='particles'
+      <div className="App">
+        <Particles className='particles'
           params={particlesOptions}
           />
         <Navigation  isSignedIn={isSignedIn} onRouteChange={this.onRouteChange} />
+        {isLoading ? <Loading /> : null}
         {route === 'home'
-         ? <div>
+        ? <div>
             <Logo />
             <Rank
               name={this.state.user.name}
               entries={this.state.user.entries}
             />
             <ImageLinkForm
-             onInputChange={this.onInputChange}
-             onButtonSubmit={this.onButtonSubmit}
+            onInputChange={this.onInputChange}
+            onButtonSubmit={this.onButtonSubmit}
             />
             <FaceRecognition box={box} imageUrl={imageUrl}/>
-           </div>
+          </div>
           : (
               route === 'signin'
-             ? <SignIn loadUser={this.loadUser} onRouteChange={this.onRouteChange} />
-             : <Register loadUser={this.loadUser} onRouteChange={this.onRouteChange}/>
+            ? <SignIn loadUser={this.loadUser} onRouteChange={this.onRouteChange} />
+            : <Register loadUser={this.loadUser} onRouteChange={this.onRouteChange}/>
             )
         }
       </div>
